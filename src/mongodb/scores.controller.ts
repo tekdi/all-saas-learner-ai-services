@@ -135,12 +135,12 @@ export class ScoresController {
 
           if (similarityDenoisedText <= similarityNonDenoisedText) {
             CreateLearnerProfileDto['output'] = asrOutBeforeDenoised;
-            DenoisedresponseText = asrOutDenoised[0]?.source;
-            nonDenoisedresponseText = asrOutBeforeDenoised[0]?.source;
+            DenoisedresponseText = asrOutDenoised[0]?.source || '';
+            nonDenoisedresponseText = asrOutBeforeDenoised[0]?.source || '';
           } else {
             CreateLearnerProfileDto['output'] = asrOutDenoised;
-            DenoisedresponseText = asrOutDenoised[0]?.source;
-            nonDenoisedresponseText = asrOutBeforeDenoised[0]?.source;
+            DenoisedresponseText = asrOutDenoised[0]?.source || '';
+            nonDenoisedresponseText = asrOutBeforeDenoised[0]?.source || '';
           }
 
           if (CreateLearnerProfileDto.output[0].source === '') {
@@ -208,8 +208,9 @@ export class ScoresController {
             improved: improved,
             comment: ""
           }
-
+  
           await this.scoresService.addDenoisedOutputLog(createDenoiserOutputLog);
+
         }
 
         let fluencyScore = await this.scoresService.getCalculatedFluency(textEvalMatrices, reptitionCount, originalText, responseText, pause_count);
@@ -1241,8 +1242,8 @@ export class ScoresController {
             improved: improved,
             comment: ""
           }
-
-          await this.scoresService.addDenoisedOutputLog(createDenoiserOutputLog);
+          
+          await this.scoresService.addDenoisedOutputLog(createDenoiserOutputLog);       
         }
 
         const wer = textEvalMatrices.wer;
@@ -1371,7 +1372,7 @@ export class ScoresController {
         subsessionFluency: parseFloat(fluency.toFixed(2)),
       });
     } catch (err) {
-      console.log(err);
+      // console.log(err);
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
         status: 'error',
         message: 'Server error - ' + err,
@@ -1658,7 +1659,7 @@ export class ScoresController {
         subsessionFluency: parseFloat(fluency.toFixed(2)),
       });
     } catch (err) {
-      console.log(err);
+      // console.log(err);
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
         status: 'error',
         message: 'Server error - ' + err,
@@ -3007,7 +3008,7 @@ export class ScoresController {
             contentObject.contentSourceData[0].syllableCount;
         });
       }
-
+      
       return response.status(HttpStatus.OK).send({
         content: contentArr,
         contentForToken: contentForTokenArr,
@@ -3803,7 +3804,6 @@ export class ScoresController {
     }
   }
 
-
   @ApiParam({
     name: 'userId',
     example: '27519278861697549531193',
@@ -3850,7 +3850,6 @@ export class ScoresController {
     const data = await this.scoresService.getMissingChars(
       storyData.storyLanguage,
     );
-
     const storyString = storyData.storyString;
 
     const tokenArr = storyString.split('');
@@ -3914,7 +3913,6 @@ export class ScoresController {
     });
     const notIncludedTotal = notIncluded.length;
 
-    console.log(uniqueCharArr);
     return response.status(HttpStatus.CREATED).send({
       status: 'success',
       matched: matched,
@@ -4164,6 +4162,14 @@ export class ScoresController {
   async getUsersMilestones(@Res() response: FastifyReply, @Body() data: any) {
     try {
       const { userIds, language } = data;
+
+      if (!userIds || !Array.isArray(userIds) || userIds.length === 0 || !language) {
+        return response.status(HttpStatus.BAD_REQUEST).send({
+          status: "error",
+          message: "Invalid request data",
+        });
+      }
+
       let recordData = [];
       for (const userId of userIds) {
         let milestoneData: any = await this.scoresService.getlatestmilestone(userId, language);
@@ -4293,11 +4299,12 @@ export class ScoresController {
       let target_Data: any = []
       let famalarity_Data: any = [];
       const subsessionData: any = await this.scoresService.getSubessionIds(userId);
-
+  
       for (const subsession of subsessionData) {
         const subSessionId = subsession.sub_session_id;
         const createdAt = subsession.createdAt
         const famalarityData = await this.scoresService.getFamiliarityBysubSessionUserProfile(subSessionId, language);
+        
         if (famalarityData) {
           famalarity_Data.push({
             subSessionId: subSessionId,
